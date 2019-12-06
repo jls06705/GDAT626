@@ -60,3 +60,33 @@ set.seed(42)
 sessionInfo()       # Information about all the packages and versions
 Sys.time()          # So we have a record of when this was knit
 ```
+
+```{r Load_Dow_Jones_data}
+#fread {data.table} command for smartly reading in data in multiple formats, such as csv or txt
+
+fread("C:/Users/Richard/Documents/Data Science/GDAT_626_Time-series/DOW_JONES/dow_jones_index.data") -> djData
+
+str(djData)
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
