@@ -7,24 +7,56 @@ output: word_document
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
+
+c("data.table",
+  "haven",         #read dta files
+  "here",
+  "recipes",       #recipe and bake
+  "ggplot2",
+  "glue",          #tidyverse-type package
+  "cowplot",       #visualizations
+  "tidyquant",     #theme_tq
+  "timetk",        #tk_index
+  "tibbletime",    #as_tbl_time
+  "TTR",           # decompose
+  "lubridate",     # Excellent for manipulating and converting to and from 'date' data
+  "tidyverse",     # For data manipulation
+  "lattice",       # xyplot to look for effect of groups
+  "dtplyr",        # Pipes (%>%), mutate, etc.
+  "car",           # scatterplot
+  "stats",         # cor
+  "forecast",      # forecasting
+  "here",          # Better folder structure
+  "MASS",          # fitdistr()
+  "MTS",           # Multivariate time series
+  "plotly",        # For 3-d and interactive plots
+  "dtw",           # dynamic time warping
+  "tseries",       # Some time series functions
+  "xts",           # More time series functions
+  "zoo",           # Still more time series functions
+  "tsfeatures",    # package contsaing functions for identifying features of time series
+  "keras",         # converts code for machine learning using python
+  "rsample",       # commands fro creating test/train data splits
+  "TSA"            # periodogram
+  ) -> package_names  
+for(package_name in package_names) {
+  if(!is.element(package_name, installed.packages()[,1])) {
+     install.packages(package_name,
+                      repos = "http://cran.mtu.edu/")
+  }
+  library(package_name, character.only=TRUE,
+          quietly=TRUE,verbose=FALSE)
+}
+
+rm(list=c("package_name", "package_names")) # clean up the environment
+
+options(show.signif.stars = FALSE)  # Don't confuse significance & effect size!
+
+set_here()  # So that this works anywhere
+
+set.seed(42)
 ```
-
-## R Markdown
-
-This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
-
-When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
-
-```{r cars}
-summary(cars)
+```{r session}
+sessionInfo()       # Information about all the packages and versions
+Sys.time()          # So we have a record of when this was knit
 ```
-
-## Including Plots
-
-You can also embed plots, for example:
-
-```{r pressure, echo=FALSE}
-plot(pressure)
-```
-
-Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
