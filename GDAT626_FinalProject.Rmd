@@ -61,15 +61,72 @@ sessionInfo()       # Information about all the packages and versions
 Sys.time()          # So we have a record of when this was knit
 ```
 
+#Topic
+
+
+
 ```{r Load_Dow_Jones_data}
 #fread {data.table} command for smartly reading in data in multiple formats, such as csv or txt
 
-fread("C:/Users/Richard/Documents/Data Science/GDAT_626_Time-series/DOW_JONES/dow_jones_index.data") -> djData
+fread("C:/Users/Richard/Documents/Data Science/GDAT_626_Time-series/DOW_JONES/dow_jones_index.data") -> Dow_Jones
 
+str(Dow_Jones)
+```
+
+```{r remove_$_Convert_to_numeric}
+#Remove dollar sign from Dow_Jones
+gsub('\\$', '', Dow_Jones$high) -> Dow_Jones$high #\\ "escape" the character
+as.numeric(Dow_Jones$high) -> Dow_Jones$high
+
+gsub('\\$', '', Dow_Jones$open) -> Dow_Jones$open #\\ "escape" the character
+as.numeric(Dow_Jones$open) -> Dow_Jones$open
+
+gsub('\\$', '', Dow_Jones$close) -> Dow_Jones$close #\\ "escape" the character
+as.numeric(Dow_Jones$close) -> Dow_Jones$close
+
+gsub('\\$', '', Dow_Jones$low) -> Dow_Jones$low #\\ "escape" the character
+as.numeric(Dow_Jones$low) -> Dow_Jones$low
+
+gsub('\\$', '', Dow_Jones$next_weeks_open) -> Dow_Jones$next_weeks_open #\\ "escape" the character
+as.numeric(Dow_Jones$next_weeks_open) -> Dow_Jones$next_weeks_open
+
+gsub('\\$', '', Dow_Jones$next_weeks_close) -> Dow_Jones$next_weeks_close #\\ "escape" the character
+as.numeric(Dow_Jones$next_weeks_close) -> Dow_Jones$next_weeks_close
+
+head(Dow_Jones)
+```
+
+```{r select_open}
+select(Dow_Jones, date, stock, open) -> djData
 str(djData)
 ```
 
 
+```{r spread_data}
+#We want to be able to compare the diferent stocks to each other, so we will spread {tidyr} them out.
+spread(djData, key = stock, value = open) %>%       #We kept date in the previous step, so we could successfully spread
+  select(., -date) -> djWide                        #We don't need date anymore, so we can drop it
+head(djWide)
+```
+
+```{r cor_dj}
+cor(djWide, djWide, 
+    method = "pearson",
+    use = "pairwise.complete.obs") -> djCor
+which(is.na(djCor))
+```
+
+
+```{r convert_distance_dj}
+1 - djCor * djCor -> djR2dist
+as.dist(djR2dist) -> djR2.dist
+```
+
+```{r hclust_dj}
+hclust(djR2.dist, method = "average") -> djClust
+
+plot(djClust)
+```
 
 
 
