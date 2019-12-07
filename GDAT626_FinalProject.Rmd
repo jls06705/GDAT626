@@ -67,6 +67,7 @@ Sys.time()          # So we have a record of when this was knit
 
 #Data
 
+1/14/2011 to 6/3/2011
 
 ###Load Data
 
@@ -145,7 +146,7 @@ We'll pick out MRK, HPQ, JPM, and AA for a closer look.
 
 ```{r TS_Decompose_MRK}
 MRK.data <- select(djWide, MRK)
-MRK.TS <- ts(MRK.data, start = c(2011, 2), frequency = 4) #since we only have 25 weeks, we'll look use periods of a month
+MRK.TS <- ts(MRK.data, frequency = 4) #since we only have 25 weeks, we'll look use periods of a month
 
 decompose(MRK.TS) -> MRK.comp
 plot(MRK.comp)
@@ -164,7 +165,7 @@ pacf(MRK.TS) ##pacf {stats} computes estimates of the partial autocovariance or 
 
 ```{r TS_Decompose_HPQ}
 HPQ.data <- select(djWide, HPQ)
-HPQ.TS <- ts(HPQ.data, start = c(2011, 2), frequency = 4) #since we only have 25 weeks, we'll look use periods of a month
+HPQ.TS <- ts(HPQ.data, frequency = 4) #since we only have 25 weeks, we'll look use periods of a month
 
 decompose(HPQ.TS) -> HPQ.comp
 plot(HPQ.comp)
@@ -182,7 +183,7 @@ pacf(HPQ.TS) ##pacf {stats} computes estimates of the partial autocovariance or 
 
 ```{r TS_Decompose_JPM}
 JPM.data <- select(djWide, JPM)
-JPM.TS <- ts(JPM.data, start = c(2011, 2), frequency = 4) #since we only have 25 weeks, we'll look use periods of a month
+JPM.TS <- ts(JPM.data, frequency = 4) #since we only have 25 weeks, we'll look use periods of a month
 
 decompose(JPM.TS) -> JPM.comp
 plot(JPM.comp)
@@ -200,7 +201,7 @@ pacf(JPM.TS) ##pacf {stats} computes estimates of the partial autocovariance or 
 
 ```{r TS_Decompose_AA}
 AA.data <- select(djWide, AA)
-AA.TS <- ts(AA.data, start = c(2011, 2), frequency = 4) #since we only have 25 weeks, we'll look use periods of a month
+AA.TS <- ts(AA.data, frequency = 4) #since we only have 25 weeks, we'll look use periods of a month
 
 decompose(AA.TS) -> AA.comp
 plot(AA.comp)
@@ -244,6 +245,8 @@ auto.arima(HPQ.TS) -> HPQ.arima
 HPQ.arima
 ```
 
+Another random walk. It's not looking very promising so far.
+
 ###JPM
 
 ```{r auto.arima_forecast_JPM}
@@ -257,6 +260,8 @@ auto.arima(JPM.TS) -> JPM.arima
 JPM.arima
 ```
 
+Now we have something more interesting. The model shows ARIMA(0,1,1)(0,0,1), which indicates a seasonal component to the model.
+
 ###AA
 
 ```{r auto.arima_forecast_AA}
@@ -269,6 +274,47 @@ auto.arima(AA.TS) -> AA.arima
 ```{r arima_AA}
 AA.arima
 ```
+
+Finally, the model for AA turned out to be an AR model, which predicts a very slight downward trend.
+
+#Evaluate
+
+Lets's take a closer look at the model for JPM.
+
+```{r JPM_model}
+forecast(JPM.arima, level = c(50, 80, 95)) %>% plot()
+```
+
+Our model predicts a relatively sharp drop the next week, with a fairly level series of values following after
+
+Since this data ends in 2011, I can actaully look up the real-world values that the model is predicting for comparison.
+
+```{r JPM_real_world}
+c(43.27, 45.02, 45.21, 43.00, 44.75, 46.00, 47.20, 44.41, 45.62, 45.42, 46.28, 46.81, 46.10, 47.00, 44.27, 44.65, 46.12, 44.75, 42.97, 42.40, 45.94, 41.10, 41.29, 40.50, 43.24, 40.59, 
+#I looked up and added the values for the next 8 weeks below, so we could compare predicted to reality  
+  40.85, 39.40, 41.51, 40.19, 39.79, 41.52, 41.16, 36.23) -> JPM.real
+
+JPMreal.TS <- ts(JPM.real, frequency = 4)
+```
+
+```{r}
+forecast(JPM.arima, level = c(50, 80, 95)) %>% plot()
+lines(JPMreal.TS, col = "red")
+```
+
+That is actually better than I expected. The entirety of the real data is within the 50% CI of the forecast. The model also predicted the placement of a sharp spike down, and the following rise with surprising accuracy, although it underestimated the size of those movements.
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
