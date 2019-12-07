@@ -5,6 +5,8 @@ date: "12/6/2019"
 output: word_document
 ---
 
+#Setup:
+
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 
@@ -63,7 +65,10 @@ Sys.time()          # So we have a record of when this was knit
 
 #Topic
 
+#Data
 
+
+###Load Data
 
 ```{r Load_Dow_Jones_data}
 #fread {data.table} command for smartly reading in data in multiple formats, such as csv or txt
@@ -72,6 +77,8 @@ fread("C:/Users/Richard/Documents/Data Science/GDAT_626_Time-series/DOW_JONES/do
 
 str(Dow_Jones)
 ```
+
+###Data Cleaning
 
 ```{r remove_$_Convert_to_numeric}
 #Remove dollar sign from Dow_Jones
@@ -109,6 +116,10 @@ spread(djData, key = stock, value = open) %>%       #We kept date in the previou
 head(djWide)
 ```
 
+#EDA
+
+###Cluster Denrogram
+
 ```{r cor_dj}
 cor(djWide, djWide, 
     method = "pearson",
@@ -128,14 +139,80 @@ hclust(djR2.dist, method = "average") -> djClust
 plot(djClust)
 ```
 
+We'll pick out MRK, HPQ, JPM, and AA for a closer look.
+
+###MRK
+
+```{r TS_Decompose_MRK}
+MRK.data <- select(djWide, MRK)
+MRK.TS <- ts(MRK.data, start = c(2011, 2), frequency = 4) #since we only have 25 weeks, we'll look use periods of a month
+
+decompose(MRK.TS) -> MRK.comp
+plot(MRK.comp)
+```
+
+```{r acf_MRK}
+acf(MRK.TS) #acf {stats} computes estimates of the autocovariance or autocorrelation function
+```
+
+```{r pacf_MRK}
+pacf(MRK.TS) ##pacf {stats} computes estimates of the partial autocovariance or autocorrelation function
+```
 
 
+###HPQ
 
+```{r TS_Decompose_HPQ}
+HPQ.data <- select(djWide, HPQ)
+HPQ.TS <- ts(HPQ.data, start = c(2011, 2), frequency = 4) #since we only have 25 weeks, we'll look use periods of a month
 
+decompose(HPQ.TS) -> HPQ.comp
+plot(HPQ.comp)
+```
 
+```{r acf_HPQ}
+acf(HPQ.TS) #acf {stats} computes estimates of the autocovariance or autocorrelation function
+```
 
+```{r pacf_HPQ}
+pacf(HPQ.TS) ##pacf {stats} computes estimates of the partial autocovariance or autocorrelation function
+```
 
+###JPM
 
+```{r TS_Decompose_JPM}
+JPM.data <- select(djWide, JPM)
+JPM.TS <- ts(JPM.data, start = c(2011, 2), frequency = 4) #since we only have 25 weeks, we'll look use periods of a month
+
+decompose(JPM.TS) -> JPM.comp
+plot(JPM.comp)
+```
+
+```{r acf_JPM}
+acf(JPM.TS) #acf {stats} computes estimates of the autocovariance or autocorrelation function
+```
+
+```{r pacf_JPM}
+pacf(JPM.TS) ##pacf {stats} computes estimates of the partial autocovariance or autocorrelation function
+```
+
+#AA
+
+```{r TS_Decompose_AA}
+AA.data <- select(djWide, AA)
+AA.TS <- ts(AA.data, start = c(2011, 2), frequency = 4) #since we only have 25 weeks, we'll look use periods of a month
+
+decompose(AA.TS) -> AA.comp
+plot(AA.comp)
+```
+
+```{r acf_AA}
+acf(AA.TS) #acf {stats} computes estimates of the autocovariance or autocorrelation function
+```
+
+```{r pacf_AA}
+pacf(AA.TS) ##pacf {stats} computes estimates of the partial autocovariance or autocorrelation function
+```
 
 
 
