@@ -196,7 +196,7 @@ acf(JPM.TS) #acf {stats} computes estimates of the autocovariance or autocorrela
 pacf(JPM.TS) ##pacf {stats} computes estimates of the partial autocovariance or autocorrelation function
 ```
 
-#AA
+###AA
 
 ```{r TS_Decompose_AA}
 AA.data <- select(djWide, AA)
@@ -214,13 +214,61 @@ acf(AA.TS) #acf {stats} computes estimates of the autocovariance or autocorrelat
 pacf(AA.TS) ##pacf {stats} computes estimates of the partial autocovariance or autocorrelation function
 ```
 
+#Modeling
 
+###MRK
 
+```{r auto.arima_forecast_MRK}
+#auto.arima {forecast} Returns best ARIMA model according to either AIC, AICc or BIC
+auto.arima(MRK.TS) -> MRK.arima
+  forecast(MRK.arima, level = c(50, 80, 95)) %>% plot()
+#forecast {forecast} forecasting from time series or time series models
+```
 
+```{r arima_MRK}
+MRK.arima
+```
 
+According to arima, the best model is a random walk. Since a random walk is the simple prediction that the next point will equal the last point, we can see the forecast running off in a straight, horizontal line
 
+###HPQ
 
+```{r auto.arima_forecast_HPQ}
+#auto.arima {forecast} Returns best ARIMA model according to either AIC, AICc or BIC
+auto.arima(HPQ.TS) -> HPQ.arima
+  forecast(HPQ.arima, level = c(50, 80, 95)) %>% plot()
+#forecast {forecast} forecasting from time series or time series models
+```
 
+```{r arima_HPQ}
+HPQ.arima
+```
+
+###JPM
+
+```{r auto.arima_forecast_JPM}
+#auto.arima {forecast} Returns best ARIMA model according to either AIC, AICc or BIC
+auto.arima(JPM.TS) -> JPM.arima
+  forecast(JPM.arima, level = c(50, 80, 95)) %>% plot()
+#forecast {forecast} forecasting from time series or time series models
+```
+
+```{r arima_MRK}
+JPM.arima
+```
+
+###AA
+
+```{r auto.arima_forecast_AA}
+#auto.arima {forecast} Returns best ARIMA model according to either AIC, AICc or BIC
+auto.arima(AA.TS) -> AA.arima
+  forecast(AA.arima, level = c(50, 80, 95)) %>% plot()
+#forecast {forecast} forecasting from time series or time series models
+```
+
+```{r arima_AA}
+AA.arima
+```
 
 
 
