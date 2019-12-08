@@ -63,13 +63,33 @@ sessionInfo()       # Information about all the packages and versions
 Sys.time()          # So we have a record of when this was knit
 ```
 
+
 #Topic
+
+
+The use of data science to predict financial markets has always been an important topic. With increasing market size and complexity comes a need for increasingly powerful and sophisticated approaches to make money through the strategic buying and selling of stocks.
+
+This is a world where improving the performance of a system by fractions of a percent can translate to increasing profits by millions of dollars.
+
+I use some of our easier and simpler approaches, to see what a "baseline" attempt is able to yield.
+
 
 #Data
 
-1/14/2011 to 6/3/2011
+
+I'm using the same Dow Jones data that was used early in the course. 
+https://archive.ics.uci.edu/ml/datasets/Dow+Jones+Index.
+
+I also pulled individual data points from:
+https://finance.yahoo.com/quote/JPM/history?period1=1307678400&period2=1315972800&interval=1d&filter=history&frequency=1d.
+
+The data contains weekly data on 30 stocks from 1/14/2011 to 6/3/2011 (25 weeks). Information includes open, high, low, and closing values for each stock on the day.
+
 
 ###Load Data
+
+
+I downloaded the data to my hard-drive and then used fread to read it into R studio.
 
 ```{r Load_Dow_Jones_data}
 #fread {data.table} command for smartly reading in data in multiple formats, such as csv or txt
@@ -79,146 +99,215 @@ fread("C:/Users/Richard/Documents/Data Science/GDAT_626_Time-series/DOW_JONES/do
 str(Dow_Jones)
 ```
 
+
 ###Data Cleaning
 
-```{r remove_$_Convert_to_numeric}
-#Remove dollar sign from Dow_Jones
-gsub('\\$', '', Dow_Jones$high) -> Dow_Jones$high #\\ "escape" the character
-as.numeric(Dow_Jones$high) -> Dow_Jones$high
 
-gsub('\\$', '', Dow_Jones$open) -> Dow_Jones$open #\\ "escape" the character
+The first problem is that all the dollar values are currently characters instead of numeric values. Unfortunately, we have to remove the dollar sign from in front of each value before we can run as.numeric.
+
+```{r remove_$_Convert_to_numeric}
+#Remove dollar sign from Dow_Jones                #gsub {base} replaces all instances of target with substitute
+gsub('\\$', '', Dow_Jones$high) -> Dow_Jones$high #\\ "escape" the character, will remove the dollar sign
+as.numeric(Dow_Jones$high) -> Dow_Jones$high      #as.numeric converts data to numeric format
+
+gsub('\\$', '', Dow_Jones$open) -> Dow_Jones$open 
 as.numeric(Dow_Jones$open) -> Dow_Jones$open
 
-gsub('\\$', '', Dow_Jones$close) -> Dow_Jones$close #\\ "escape" the character
+gsub('\\$', '', Dow_Jones$close) -> Dow_Jones$close 
 as.numeric(Dow_Jones$close) -> Dow_Jones$close
 
-gsub('\\$', '', Dow_Jones$low) -> Dow_Jones$low #\\ "escape" the character
+gsub('\\$', '', Dow_Jones$low) -> Dow_Jones$low 
 as.numeric(Dow_Jones$low) -> Dow_Jones$low
 
-gsub('\\$', '', Dow_Jones$next_weeks_open) -> Dow_Jones$next_weeks_open #\\ "escape" the character
+gsub('\\$', '', Dow_Jones$next_weeks_open) -> Dow_Jones$next_weeks_open 
 as.numeric(Dow_Jones$next_weeks_open) -> Dow_Jones$next_weeks_open
 
-gsub('\\$', '', Dow_Jones$next_weeks_close) -> Dow_Jones$next_weeks_close #\\ "escape" the character
+gsub('\\$', '', Dow_Jones$next_weeks_close) -> Dow_Jones$next_weeks_close 
 as.numeric(Dow_Jones$next_weeks_close) -> Dow_Jones$next_weeks_close
 
 head(Dow_Jones)
 ```
+
+Now that the values are in a more usable form, we can work on formatting the data frame itself into a useable form.
+
+We'll start by picking out the columns we actually want to use. We want to focus on only one value for each stock, so we will pick the open value as the representative. We will also drop volume and all percent changes and dividend information.
 
 ```{r select_open}
 select(Dow_Jones, date, stock, open) -> djData
 str(djData)
 ```
 
+Our data frame is much more manageable, but it's not yet in a form that we could use for a time series, as the stocks are all stacked on top of each other. We will need to spread the data so that we have the values for each stock as their own separate columns. We kept date in the previous step, as we need it for spread to work.
 
 ```{r spread_data}
 #We want to be able to compare the diferent stocks to each other, so we will spread {tidyr} them out.
 spread(djData, key = stock, value = open) %>%       #We kept date in the previous step, so we could successfully spread
   select(., -date) -> djWide                        #We don't need date anymore, so we can drop it
 head(djWide)
+
+#for spread, the key is what becomes the titles of the new columns, so each stock will become its own column.
+#the value is what values will be populated in those new columns
+#date was necessary to keep, as without it, R can't properly sort the order of the values
 ```
+
+Now we have our data frame of time-series-ready values.
+
 
 #EDA
 
-###Cluster Denrogram
+
+Before diving into deeper EDA, I'm going to start with a cluster. I don't have the time to work with all 30 stocks, so I want to pick just a handful of representives for further work.
+
+
+###Cluster Dendrogram
+
+
+Clustering is a great tool when you are dealing with many related-but-separate time series. Cluster lets you break them down into groups, allowing you to select only the most interesting or most representative series to work on.
+
+First, we need to run a correlation to see if we can even successfully cluster our data. I don't expect there to be any issue, as stock market data is extremely reliable in both consistency and accuracy of collection. The process is still good practice, and there is always the chance of surprises.
 
 ```{r cor_dj}
+#cor {stats} computes the variance and covariance of two vectors
 cor(djWide, djWide, 
     method = "pearson",
     use = "pairwise.complete.obs") -> djCor
-which(is.na(djCor))
+which(is.na(djCor)) #is.na will check is the result of each correlation of was na (TRUE) or not (FALSE)
+#which will count how many times the result was true
 ```
 
+It looks like none of the correlations returned as na. This means we can proceed with our cluster without altering the data further.
 
+We calculate the distances using the correlation values.
 ```{r convert_distance_dj}
-1 - djCor * djCor -> djR2dist
+#Correlation goes from 1 to -1, and distanc is the opposite, so 1 - correlation is distance
+#We'll use the correlation squared, as this will guarantee a positive value
+
+1 - djCor * djCor -> djR2dist   
 as.dist(djR2dist) -> djR2.dist
+
+#as.dist converts our numeric value to a distance value, this is necessary for hclust below.
 ```
 
+Then we can plug those values into hclust and plot to get our dendrogram.
 ```{r hclust_dj}
+#hclust {stats} Hierarchical cluster analysis on a set of dissimilarities and methods for analyzing it
+
 hclust(djR2.dist, method = "average") -> djClust
 
 plot(djClust)
 ```
 
-We'll pick out MRK, HPQ, JPM, and AA for a closer look.
+It looks like we have 2 to 4 main groups, depending on how you break them down. I want to use four different stocks, so we'll pick out MRK, HPQ, JPM, and AA for a closer look. MRK (Merck & Co.) is easy, as its part of the first split off. I'll take HPQ (Hewlett-Packard) from the second group as I'm interested in computers. I'll take JPM (JPMorgan Chase & Co.) from the third group, as that is my bank. Finally, I'll take AA (Alcoa) from the last small group on the end.
+
 
 ###MRK
 
+Decomposition is almost always a great place to start for time-series data, as it gives you a really quick and easy look at any major influences that are showing up in the data.
 ```{r TS_Decompose_MRK}
-MRK.data <- select(djWide, MRK)
-MRK.TS <- ts(MRK.data, frequency = 4) #since we only have 25 weeks, we'll look use periods of a month
+MRK.data <- select(djWide, MRK)       #We need to separate out the univariate data before converting it to time-series
+MRK.TS <- ts(MRK.data, frequency = 4) #since we only have 25 weeks, we'll use periods of a month
+#ts {stats} converts data to a time-series object. The freqency is how many samples were taken per peiod
 
+#decompose {stats} breaks down observed values to show seasonal, trend, and irregular components using moving averages
 decompose(MRK.TS) -> MRK.comp
 plot(MRK.comp)
 ```
+
+Acdcording to the decompose above, there is a notable seasonal component that ranges from -0.4 to +0.4, a range of 1. Since the observed values only move from approximately 32 to 38, a difference of 6, a seasonal range of 1 can definitely impact the observed values.
+
+However, the random component ranges from -1 to +1, more than twice as potent as the seasonal component. This means that making predictions from the seasonality of the data is very dangerous, as the random aspects of the data are likely to overpower any seasonal effects.
 
 ```{r acf_MRK}
 acf(MRK.TS) #acf {stats} computes estimates of the autocovariance or autocorrelation function
 ```
 
+The acf seems to somewhat agree with the seasonality shown above, with the acf value dropping to near 0 before climbing back up.
+
 ```{r pacf_MRK}
 pacf(MRK.TS) ##pacf {stats} computes estimates of the partial autocovariance or autocorrelation function
 ```
 
+The pacf is all over the place, but there are no significant values appearing after the first lag.
 
 ###HPQ
 
 ```{r TS_Decompose_HPQ}
 HPQ.data <- select(djWide, HPQ)
-HPQ.TS <- ts(HPQ.data, frequency = 4) #since we only have 25 weeks, we'll look use periods of a month
+HPQ.TS <- ts(HPQ.data, frequency = 4) #since we only have 25 weeks, we'll use periods of a month
 
 decompose(HPQ.TS) -> HPQ.comp
 plot(HPQ.comp)
 ```
 
+The seasonal component now has a range of 2 next to an observed range of about 14. Again the random aspect is double the seasonal, making it difficult to predict off the seasonality of the data.
+
 ```{r acf_HPQ}
 acf(HPQ.TS) #acf {stats} computes estimates of the autocovariance or autocorrelation function
 ```
+
+We see the potential for seasonality above, but the later lags just don't get anywhere near the significance line.
 
 ```{r pacf_HPQ}
 pacf(HPQ.TS) ##pacf {stats} computes estimates of the partial autocovariance or autocorrelation function
 ```
 
+The pacf drops off pretty sharply.
+
 ###JPM
 
 ```{r TS_Decompose_JPM}
 JPM.data <- select(djWide, JPM)
-JPM.TS <- ts(JPM.data, frequency = 4) #since we only have 25 weeks, we'll look use periods of a month
+JPM.TS <- ts(JPM.data, frequency = 4) #since we only have 25 weeks, we'll use periods of a month
 
 decompose(JPM.TS) -> JPM.comp
 plot(JPM.comp)
 ```
 
+The seasonal aspect is now a quarter of the random.
+
 ```{r acf_JPM}
 acf(JPM.TS) #acf {stats} computes estimates of the autocovariance or autocorrelation function
 ```
+
+We can see those later lags trying to reach the significance line, but no quite making it.
 
 ```{r pacf_JPM}
 pacf(JPM.TS) ##pacf {stats} computes estimates of the partial autocovariance or autocorrelation function
 ```
 
+The pacf also has some higher values, but doesn't cross into significance either.
+
 ###AA
 
 ```{r TS_Decompose_AA}
 AA.data <- select(djWide, AA)
-AA.TS <- ts(AA.data, frequency = 4) #since we only have 25 weeks, we'll look use periods of a month
+AA.TS <- ts(AA.data, frequency = 4) #since we only have 25 weeks, we'll use periods of a month
 
 decompose(AA.TS) -> AA.comp
 plot(AA.comp)
 ```
 
+This is the closest we've see the seasonal aspect get to the random aspect. It's still smaller, but the difference is slight enough, that we might see the seasonality peek through.
+
 ```{r acf_AA}
 acf(AA.TS) #acf {stats} computes estimates of the autocovariance or autocorrelation function
 ```
+
+Similar to JPM, we can see a couple of higher values at later lags, but none quite reach the significance line.
 
 ```{r pacf_AA}
 pacf(AA.TS) ##pacf {stats} computes estimates of the partial autocovariance or autocorrelation function
 ```
 
+The pacf holds pretty level values.
+
 #Analysis
 
 ###MRK
 
+When dealing with time-series, auto.arima is at the top of first methods to try. Under most conditions, it is a quick and simple command to run, and tests multiple approaches in a single command.
+
+Paired with forecast, we can see what the model predicts will happen within various confidence intervals.
 ```{r auto.arima_forecast_MRK}
 #auto.arima {forecast} Returns best ARIMA model according to either AIC, AICc or BIC
 auto.arima(MRK.TS) -> MRK.arima
@@ -230,7 +319,7 @@ auto.arima(MRK.TS) -> MRK.arima
 MRK.arima
 ```
 
-According to arima, the best model is a random walk. Since a random walk is the simple prediction that the next point will equal the last point, we can see the forecast running off in a straight, horizontal line
+According to arima, the best model is a random walk. Since a random walk is the simple prediction that the next point will equal the last point, we can see the forecast running off in a straight, horizontal line. Unfortunately, this is not a very dynamic or sophisticated approach.
 
 ###HPQ
 
@@ -260,7 +349,7 @@ auto.arima(JPM.TS) -> JPM.arima
 JPM.arima
 ```
 
-Now we have something more interesting. The model shows ARIMA(0,1,1)(0,0,1), which indicates a seasonal component to the model.
+Now we have something more interesting. The model shows ARIMA(0,1,1)(0,0,1), which indicates a seasonal component to the model. We can also see the model predicting dips and rises in the future. This will give us something to really compare to real-world data.
 
 ###AA
 
@@ -275,19 +364,24 @@ auto.arima(AA.TS) -> AA.arima
 AA.arima
 ```
 
-Finally, the model for AA turned out to be an AR model, which predicts a very slight downward trend.
+Finally, the model for AA turned out to be an AR model, which predicts a very slight downward trend. Unfortunatley, this is not showing much more than the random walk did.
 
 #Evaluate
 
-Lets's take a closer look at the model for JPM.
+Of the four models above, the most interesting, and potentially useful, was the one for JPM. We'll take acloser look to see just how accurate it was or wasn't.
+
+I'll throw the forecast back up.
 
 ```{r JPM_model}
 forecast(JPM.arima, level = c(50, 80, 95)) %>% plot()
 ```
 
-Our model predicts a relatively sharp drop the next week, with a fairly level series of values following after
+Since this data ends in 2011, I can actually look up the real-world values that the model is predicting for comparison.
 
-Since this data ends in 2011, I can actaully look up the real-world values that the model is predicting for comparison.
+I pulled individual data points from:
+https://finance.yahoo.com/quote/JPM/history?period1=1307678400&period2=1315972800&interval=1d&filter=history&frequency=1d.
+
+I then just took the existing 25 data points, and added the 8 new ones, and collected them into a vector that I could convert into a time-series.
 
 ```{r JPM_real_world}
 c(43.27, 45.02, 45.21, 43.00, 44.75, 46.00, 47.20, 44.41, 45.62, 45.42, 46.28, 46.81, 46.10, 47.00, 44.27, 44.65, 46.12, 44.75, 42.97, 42.40, 45.94, 41.10, 41.29, 40.50, 43.24, 40.59, 
@@ -297,16 +391,21 @@ c(43.27, 45.02, 45.21, 43.00, 44.75, 46.00, 47.20, 44.41, 45.62, 45.42, 46.28, 4
 JPMreal.TS <- ts(JPM.real, frequency = 4)
 ```
 
+
+
 ```{r}
 forecast(JPM.arima, level = c(50, 80, 95)) %>% plot()
 lines(JPMreal.TS, col = "red")
+#lines adds onto an existing plot
 ```
 
 That is actually better than I expected. The entirety of the real data is within the 50% CI of the forecast. The model also predicted the placement of a sharp spike down, and the following rise with surprising accuracy, although it underestimated the size of those movements.
 
 #Findings
 
+Of the four stocks that were selected for analysis, two did not show any predictive promise. MRK and HPQ were modeled with a random walk approach, which simply predicts that each value will be the same as the last. JPM and AA showed more promise, with JPM being the most interesting.
 
+The JPM model did accurately predict the timing of two spikes over the next two months, although it did underestimate the heights of those spikes. The real data also stayed inside of the 50% CI of the model.
 
 
 
