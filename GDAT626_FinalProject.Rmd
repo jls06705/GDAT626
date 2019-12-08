@@ -215,7 +215,7 @@ acf(AA.TS) #acf {stats} computes estimates of the autocovariance or autocorrelat
 pacf(AA.TS) ##pacf {stats} computes estimates of the partial autocovariance or autocorrelation function
 ```
 
-#Modeling
+#Analysis
 
 ###MRK
 
@@ -304,7 +304,7 @@ lines(JPMreal.TS, col = "red")
 
 That is actually better than I expected. The entirety of the real data is within the 50% CI of the forecast. The model also predicted the placement of a sharp spike down, and the following rise with surprising accuracy, although it underestimated the size of those movements.
 
-
+#Findings
 
 
 
