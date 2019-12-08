@@ -311,7 +311,7 @@ Paired with forecast, we can see what the model predicts will happen within vari
 ```{r auto.arima_forecast_MRK}
 #auto.arima {forecast} Returns best ARIMA model according to either AIC, AICc or BIC
 auto.arima(MRK.TS) -> MRK.arima
-  forecast(MRK.arima, level = c(50, 80, 95)) %>% plot()
+  forecast(MRK.arima, level = c(50, 80, 95)) %>% plot(main = "MRK ARIMA(0,1,0)")
 #forecast {forecast} forecasting from time series or time series models
 ```
 
@@ -326,7 +326,7 @@ According to arima, the best model is a random walk. Since a random walk is the 
 ```{r auto.arima_forecast_HPQ}
 #auto.arima {forecast} Returns best ARIMA model according to either AIC, AICc or BIC
 auto.arima(HPQ.TS) -> HPQ.arima
-  forecast(HPQ.arima, level = c(50, 80, 95)) %>% plot()
+  forecast(HPQ.arima, level = c(50, 80, 95)) %>% plot(main = "HPQ ARIMA(0,1,0)")
 #forecast {forecast} forecasting from time series or time series models
 ```
 
@@ -341,7 +341,7 @@ Another random walk. It's not looking very promising so far.
 ```{r auto.arima_forecast_JPM}
 #auto.arima {forecast} Returns best ARIMA model according to either AIC, AICc or BIC
 auto.arima(JPM.TS) -> JPM.arima
-  forecast(JPM.arima, level = c(50, 80, 95)) %>% plot()
+  forecast(JPM.arima, level = c(50, 80, 95)) %>% plot(main = "JPM ARIMA(0,1,1)(0,0,1)[4]")
 #forecast {forecast} forecasting from time series or time series models
 ```
 
@@ -356,7 +356,7 @@ Now we have something more interesting. The model shows ARIMA(0,1,1)(0,0,1), whi
 ```{r auto.arima_forecast_AA}
 #auto.arima {forecast} Returns best ARIMA model according to either AIC, AICc or BIC
 auto.arima(AA.TS) -> AA.arima
-  forecast(AA.arima, level = c(50, 80, 95)) %>% plot()
+  forecast(AA.arima, level = c(50, 80, 95)) %>% plot(main = "AA ARIMA(1,0,0)")
 #forecast {forecast} forecasting from time series or time series models
 ```
 
@@ -394,7 +394,7 @@ JPMreal.TS <- ts(JPM.real, frequency = 4)
 
 
 ```{r}
-forecast(JPM.arima, level = c(50, 80, 95)) %>% plot()
+forecast(JPM.arima, level = c(50, 80, 95)) %>% plot(main = "JPM Forecast and Real Data")
 lines(JPMreal.TS, col = "red")
 #lines adds onto an existing plot
 ```
